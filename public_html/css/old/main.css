@@ -1,0 +1,69 @@
+:root{
+    --main-bg-color: #1e69a6;
+    --main-bg-color-light: #528bb9;
+    --second-bg-color: #2379bf;
+    --second-bg-color-light: #3391dd;
+    --third-bg-color: #474444;
+}
+
+/*footer*/
+body{
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  display:flex;
+  flex-direction: column;
+}
+
+footer {
+  width: 100%;
+  background-color: var(--primary);
+  margin-top: auto;
+}
+/* .end footer*/
+
+.bg-primary, .btn-primary{
+    background-color: var(--main-bg-color);
+    background-image: linear-gradient(180deg,var(--second-bg-color) 1px,var(--main-bg-color));
+    border-color: var(--second-bg-color);
+    color: #fff;
+    text-shadow: 0 0 1px #000;
+}
+
+.btn-primary:hover{
+    background-color: var(--main-bg-color-light);
+    background-image: linear-gradient(180deg,var(--second-bg-color-light) 1px,var(--main-bg-color-light));
+    border-color: var(--second-bg-color-light);
+}
+
+.navbar.navbar-dark, .btn-secondary, .bg-dark{
+    background-color: var(--third-bg-color);
+    border-color: var(--third-bg-color);
+    color: #fff;
+    /* text-shadow: 0 0 1px #000; */
+}
+
+/*David Flores - Paginacion*/
+.pagination{
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+}
+
+.pagination a {
+  color: #0068B3;
+  float: left;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+.pagination .active {
+  background-color: #0068B3;
+}
+
+.pagination .active a {
+  color: white;
+}
+
+.pagination li:hover:not(.active) {
+    background-color: #ddd;
+}
+/*Fin David Flores -  Paginacion*/
