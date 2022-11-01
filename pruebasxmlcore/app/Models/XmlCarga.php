@@ -18,5 +18,9 @@ class XmlCarga extends Model
         'ejercicio',
         'archivo',
         'xml',
+        'forma_pago',
+        'tipo_error',
+        'json_sap',
+        'resultado',
     ];
 }

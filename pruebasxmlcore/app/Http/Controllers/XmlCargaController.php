@@ -15,10 +15,26 @@ class XmlCargaController extends Controller
     public function cargaXml(Request $request)
     {
         $rules = [
+            "proveedor" => "string|required",
+            "sociedad" => "string|required",
+            "documento" => "string|required",
+            "importe_documento" => "numeric|required|min:0",
+            "referencia" => "string|required",
+            "rfc" => "string|required",
+            "tipo_xml" => "string|required",
+            "ejercicio" => "numeric|required|min:2000",
+
             "xml" => "required",
             "nombre_xml" => "string|required",
         ];
         $this->validate($request, $rules);
+
+        $proveedor = $request->input('proveedor');
+        $sociedad = $request->input('sociedad');
+        $documento = $request->input('documento');
+        $referencia = $request->input('referencia');
+        $tipo_comprobante = $request->input('tipo_xml');
+        $ejercicio = $request->input('ejercicio');
 
         $base64String = $request->input("xml");
 
@@ -31,13 +47,40 @@ class XmlCargaController extends Controller
                 ],
             ];
         $xmlString = base64_decode($base64String);
-        
-        $dataXML = $this->readXMLData($xmlString);
 
+        if (!is_array($xmlData = $this->readXMLData($xmlString))) {
+
+            return [
+                "code" => 400,
+                "status" => "error",
+                "message" => $xmlData
+            ];
+        }
+
+        if ($xmlData['tipo_comprobante'] != $tipo_comprobante) {
+
+            return [
+                "code" => 400,
+                "status" => "error",
+                "message" => "El tipo de comprobante no coincide: " . $tipo_comprobante
+            ];
+        }
+
+        $cargaXml = [
+            $documento,
+            $referencia,
+            $tipo_comprobante,
+            $ejercicio,
+            "",
+            $xmlString,
+        ];
+
+        $resultado = $this->guardarRegistro($cargaXml, $proveedor, $sociedad, $xmlData['forma_pago']);
         $data = [
             "code" => 200,
             "status" => "success",
-            "data" => $dataXML
+            "message" => "Archivo cargado correctamente.",
+            "data" => $xmlData
         ];
         return response()->json($data, $data["code"]);
     }
@@ -59,7 +102,7 @@ class XmlCargaController extends Controller
         // Save zip File
         $fileName = $request->input('nombre_zip');
         $base64String = $request->input("zip");
-        $folderPath = storage_path("app/public/zip_files/".auth()->user()->id."/");
+        $folderPath = storage_path("app/public/zip_files/" . auth()->user()->id . "/");
         if (!File::exists($folderPath)) {
             \File::makeDirectory($folderPath, 0755, true);
         }
@@ -71,55 +114,41 @@ class XmlCargaController extends Controller
 
         $data = $this->getCsvContent($folderPath, $fileName);
 
-        if($data["code"] == 200) {
+        if ($data["code"] == 200) {
             $registros = $data['csv_content'];
-            
-            for ($i=0; $i < count($registros) ; $i++) { 
+
+            for ($i = 0; $i < count($registros); $i++) {
 
                 //ignora los XMl que no tuvieron contenido
-                if( end($registros[$i]) == null ){
+                if (end($registros[$i]) == null) {
                     $registros[$i][] = 'No se encontró el XML en el archivo.';
                     $xmlValidos[] = $registros[$i];
                     continue;
                 }
-                if((count($registros[$i]) != 6)) {
-                    $registros[$i][] = 'La fila en archivo index no tiene un formato válido.';      
+                if ((count($registros[$i]) != 6)) {
+                    $registros[$i][] = 'La fila en archivo index no tiene un formato válido.';
                     $xmlValidos[] = $registros[$i];
-                    continue;                  
+                    continue;
                 }
-                if($registros[$i][2] != 'I') {
+                if ($registros[$i][2] != 'I') {
                     $registros[$i][] = 'No es un tipo XML de Ingreso';
                     $xmlValidos[] = $registros[$i];
                     continue;
                 }
 
-                $cargaXml = [
-                    'documento' => $registros[$i][0],
-                    'referencia' => $registros[$i][1],
-                    'tipo_xml' => $registros[$i][2],
-                    'ejercicio' => $registros[$i][3],
-                    'archivo' => $registros[$i][4],
-                    'xml' => $registros[$i][5],
-                    'proveedor' => $proveedor,
-                    'sociedad' => $sociedad,
-                ];
-                $resultado = $this->guardarRegistro($cargaXml);
-                if(is_object($resultado)) {
-                    $registros[$i][] = 'Ok';
-                    $xmlValidos[] = $registros[$i];
-                }
+                $resultado = $this->guardarRegistro($registros[$i], $proveedor, $sociedad);
+                $xmlValidos[] = $resultado;
             }
-    
+
             return [
                 "code" => 200,
                 "status" => "success",
                 "array" => $xmlValidos,
             ];
-        }       
-        
+        }
+
         //$data = $this->upzipFiles($folderPath, $fileName);
 
         return response()->json($data, $data["code"]);
-
     }
 }

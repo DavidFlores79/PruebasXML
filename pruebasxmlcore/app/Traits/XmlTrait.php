@@ -3,9 +3,9 @@
 namespace App\Traits;
 
 use App\Models\XmlCarga;
+use DateTime;
 use Exception;
 use Illuminate\Http\Request;
-//use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +29,10 @@ trait XmlTrait
         $comprobante = array();
         $emisor = array();
         $receptor = array();
+        $fecha_timbrado = array();
+        $impuestos = array();
+        $pago10Pago = array();
+        $docto_relacionado = array();
 
         try {
             //EMPIEZO A LEER LA INFORMACION DEL CFDI E IMPRIMIRLA 
@@ -54,32 +58,59 @@ trait XmlTrait
                 $json = json_encode($tfdTimbreFiscal);
                 $xmlArray = json_decode($json, true);
                 $tfd = $xmlArray["@attributes"];
+                $fecha_timbrado = new DateTime($tfd['FechaTimbrado']);
             }
+            
+            $serie = (isset($comprobante["Serie"])) ? $comprobante["Serie"]: ''; //algunos XML no traen serie
 
             $datos = [
-                "uuid" => $tfd["UUID"],
+                "serie" => $serie,
+                "folio" => $comprobante["Folio"],
+                "fecha_timbrado" => $fecha_timbrado->format('Y-m-d'),
+                "hora_timbrado" => $fecha_timbrado->format('H:i:s'),
+                "folio_fiscal" => $tfd["UUID"],
                 "tipo_comprobante" => $comprobante["TipoDeComprobante"],
                 "emisor" => $emisor["Rfc"],
                 "receptor" => $receptor["Rfc"],
             ];
 
-            if (($comprobante["TipoDeComprobante"] == "P")) {
+            if (($comprobante["TipoDeComprobante"] == "I")) {
+
+                foreach ($xml->xpath("//cfdi:Impuestos") as $cfdiImpuestos) {
+                    $json = json_encode($cfdiImpuestos);
+                    $xmlArrayImpuestos = json_decode($json, true);
+                }
+                $impuestos = $xmlArrayImpuestos["@attributes"];    
+                
+                $datos['importe_iva'] = (isset($impuestos["TotalImpuestosTrasladados"])) ? $impuestos["TotalImpuestosTrasladados"]: '';
+                $datos['importe'] = $comprobante["Total"];
+                $datos['forma_pago'] = $comprobante["FormaPago"];
+                $datos['metodo_pago'] = $comprobante["MetodoPago"];
+            } else if (($comprobante["TipoDeComprobante"] == "P")) {
+
                 $xml->registerXPathNamespace("p", $ns["pago10"]);
 
                 foreach ($xml->xpath('//p:Pago') as $pago10Pago) {
                     $json = json_encode($pago10Pago);
                     $xmlArray = json_decode($json, true);
                     $pago10Pago = $xmlArray["@attributes"];
-                    $datos['monto'] = $pago10Pago["Monto"];
+                    $datos['importe'] = $pago10Pago["Monto"];
+                    $datos['forma_pago'] = $pago10Pago["FormaDePagoP"];
+                }
+                foreach ($xml->xpath('//p:Pago//p:DoctoRelacionado') as $docto_relacionado) {
+                    $json = json_encode($docto_relacionado);
+                    $xmlArray = json_decode($json, true);
+                    $docto_relacionado = $xmlArray["@attributes"];
+                    $datos['metodo_pago'] = $docto_relacionado["MetodoDePagoDR"];
                 }
             } else {
-                $datos['total'] = $comprobante["Total"];
+                throw new Exception('Tipo de Comprobante XML no válido.');
             }
 
             return $datos;
 
         } catch (\Throwable $th) {
-            return $this->returnError("Error al leer el XMl", $th);
+            return $th->getMessage();
         }
     }
 
@@ -188,8 +219,27 @@ trait XmlTrait
         return null;
     }
 
-    public function guardarRegistro( $cargaXml )
+    public function guardarRegistro( $registro, $proveedor, $sociedad, $forma_pago = null )
     {
+        $cargaXml = [
+            'documento' => $registro[0],
+            'referencia' => $registro[1],
+            'tipo_xml' => $registro[2],
+            'ejercicio' => $registro[3],
+            'archivo' => $registro[4],
+            'xml' => $registro[5],
+            'proveedor' => $proveedor,
+            'sociedad' => $sociedad,
+            'forma_pago' => $forma_pago,
+        ];
+        
+        $resultado = XmlCarga::create($cargaXml);
+        if(is_object($resultado)) {
+            $registro[] = 'Ok';
+            return $registro;
+        }
+
+        
         return XmlCarga::create($cargaXml);
     }
 

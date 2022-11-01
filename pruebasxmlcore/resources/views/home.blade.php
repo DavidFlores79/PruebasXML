@@ -11,7 +11,32 @@
             <div class="card">
                 <div class="card-header bg-default d-flex flex-column flex-sm-row justify-content-between ">
                     <div class=" centers-title my-2 my-sm-0">
-                        <h5 class="font-weight-bold">@yield('page-title')</h5>
+                        <h5 class="font-weight-bold">@yield('page-title') Tipo I</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form class="was-validated" ng-submit="cargarXML( $event )" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="anio_fiscal">Año Fiscal</label>
+                            <input class="form-control" type="text" name="anio_fiscal" id="anio_fiscal" readonly pattern="[0-9]+" maxlength="4" required autofocus value="2022">
+                        </div>
+                        <div class="input-group is-invalid">
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" accept=".xml" name="xml" id="xml" value="Navegar" required autofocus>
+                                <label class="custom-file-label" for="xml">Escoger Archivo Xml...</label>
+                            </div>
+                        </div>
+                        <div class="form-group pt-3">
+                            <button type="submmit" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="top" title="Cargar el archivo XML" onmouseenter="$(this).tooltip('show')" onmouseleave="$(this).tooltip('hide')" onclick="$(this).tooltip('hide')"><i class="fas fa-upload"></i> <span class="d-none d-md-inline-block">Cargar XML</span></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="my-4"></div>
+            <div class="card">
+                <div class="card-header bg-default d-flex flex-column flex-sm-row justify-content-between ">
+                    <div class=" centers-title my-2 my-sm-0">
+                        <h5 class="font-weight-bold">@yield('page-title') Tipo P</h5>
                     </div>
                 </div>
                 <div class="card-body">

@@ -20,6 +20,14 @@ app.controller("home", function ($scope, $http) {
         base64String = base64.replace('data:', '').replace(/^.+,/, '').replace('77u/', '');
 
         let data = {
+          "proveedor":"10802",
+          "sociedad":"1011",
+          "documento":"0123456789",
+          "importe_documento": 1150.56,
+          "referencia": "1234567890",
+          "rfc":"YAK800303JA7",
+          "tipo_xml": "I",
+          "ejercicio": 2022,
           "xml": base64String,
           "nombre_xml": selectedFile[0].name
         }
@@ -41,16 +49,7 @@ app.controller("home", function ($scope, $http) {
       data: data,
     }).then(
       function successCallback(response) {
-        //console.log('response: ', response);
-        let data = response.data.data;
-        console.log('data: ', data);
-        let total = (data.total) ? '\nTotal: ' + data.total : '\nMonto: ' + data.monto;
-        response.data.message = 'Tipo de Comprobante: ' + data.tipo_comprobante 
-                              + '\nEmisor: ' + data.emisor 
-                              + '\nReceptor: ' + data.receptor 
-                              + '\nUUID: ' + data.uuid
-                              + total;
-                              
+        console.log('response: ', response);                              
         swal(
           'Mensaje del Sistema',
           response.data.message,
