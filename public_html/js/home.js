@@ -44,7 +44,13 @@ app.controller("home", function ($scope, $http) {
         //console.log('response: ', response);
         let data = response.data.data;
         console.log('data: ', data);
-        response.data.message = 'Tipo de Comprobante: ' + data.tipo_comprobante + '\nEmisor: ' + data.emisor + '\nReceptor: ' + data.receptor + '\nTotal: ' + data.total
+        let total = (data.total) ? '\nTotal: ' + data.total : '\nMonto: ' + data.monto;
+        response.data.message = 'Tipo de Comprobante: ' + data.tipo_comprobante 
+                              + '\nEmisor: ' + data.emisor 
+                              + '\nReceptor: ' + data.receptor 
+                              + '\nUUID: ' + data.uuid
+                              + total;
+                              
         swal(
           'Mensaje del Sistema',
           response.data.message,
@@ -86,6 +92,8 @@ app.controller("home", function ($scope, $http) {
         base64String = base64.replace('data:', '').replace(/^.+,/, '').replace('77u/', '');
 
         let data = {
+          "proveedor":"10802",
+          "sociedad":"1011",
           "zip": base64String,
           "nombre_zip": selectedFile[0].name
         }
@@ -108,25 +116,19 @@ app.controller("home", function ($scope, $http) {
       data : data,
     }).then(
       function successCallback(response) {
-        console.log('response: ', response);
-        // let data = response.data.data;
-        // console.log('data: ', data);
-        // response.data.message = 'Tipo de Comprobante: ' + data.tipo_comprobante + '\nEmisor: ' + data.emisor + '\nReceptor: ' + data.receptor + '\nTotal: ' + data.total
-        // swal(
-        //   'Mensaje del Sistema',
-        //   response.data.message,
-        //   response.data.status
-        // );
+        console.log(response);
         $('#zip').val('').next('.custom-file-label').html('Escoger Archivo...');
       },
       function errorCallback(response) {
-        console.log('error: ', response);
+        console.log('error zip: ', response);
         if (response.status === 422) {
           let mensaje = '';
           for (let i in response.data.errors) {
             mensaje += response.data.errors[i] + '\n';
           }
           swal('Mensaje del Sistema', mensaje, 'error');
+        } else if (response.status === 413) {
+          swal('Mensaje del Sistema', 'Archivo demasiado grande.', 'warning');
         } else {
           swal(
             'Mensaje del Sistema',

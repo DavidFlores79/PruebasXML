@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\XmlCarga;
 use App\Traits\XmlTrait;
 use Illuminate\Http\Request;
 use File;
@@ -47,10 +48,13 @@ class XmlCargaController extends Controller
         $rules = [
             "zip" => "required",
             "nombre_zip" => "required|string",
-            // "proveedor" => "required|string",
-            // "sociedad" => "required|string",
+            "proveedor" => "required|string",
+            "sociedad" => "required|string",
         ];
         $this->validate($request, $rules);
+
+        $proveedor = $request->input('proveedor');
+        $sociedad = $request->input('sociedad');
 
         // Save zip File
         $fileName = $request->input('nombre_zip');
@@ -67,21 +71,51 @@ class XmlCargaController extends Controller
 
         $data = $this->getCsvContent($folderPath, $fileName);
 
-        $registros = $data['csv_content'];
-        
-        for ($i=0; $i < count($registros) ; $i++) { 
+        if($data["code"] == 200) {
+            $registros = $data['csv_content'];
             
-            if(end($registros[$i]) != null ){
-                $nuevoArray[] = end($registros[$i]);
-            }
-        }
+            for ($i=0; $i < count($registros) ; $i++) { 
 
-        return $data = [
-            "code" => 200,
-            "status" => "success",
-            "array" => $nuevoArray,
-        ];
-        
+                //ignora los XMl que no tuvieron contenido
+                if( end($registros[$i]) == null ){
+                    $registros[$i][] = 'No se encontró el XML en el archivo.';
+                    $xmlValidos[] = $registros[$i];
+                    continue;
+                }
+                if((count($registros[$i]) != 6)) {
+                    $registros[$i][] = 'La fila en archivo index no tiene un formato válido.';      
+                    $xmlValidos[] = $registros[$i];
+                    continue;                  
+                }
+                if($registros[$i][2] != 'I') {
+                    $registros[$i][] = 'No es un tipo XML de Ingreso';
+                    $xmlValidos[] = $registros[$i];
+                    continue;
+                }
+
+                $cargaXml = [
+                    'documento' => $registros[$i][0],
+                    'referencia' => $registros[$i][1],
+                    'tipo_xml' => $registros[$i][2],
+                    'ejercicio' => $registros[$i][3],
+                    'archivo' => $registros[$i][4],
+                    'xml' => $registros[$i][5],
+                    'proveedor' => $proveedor,
+                    'sociedad' => $sociedad,
+                ];
+                $resultado = $this->guardarRegistro($cargaXml);
+                if(is_object($resultado)) {
+                    $registros[$i][] = 'Ok';
+                    $xmlValidos[] = $registros[$i];
+                }
+            }
+    
+            return [
+                "code" => 200,
+                "status" => "success",
+                "array" => $xmlValidos,
+            ];
+        }       
         
         //$data = $this->upzipFiles($folderPath, $fileName);
 

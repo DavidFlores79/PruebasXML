@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\XmlCarga;
 use Exception;
 use Illuminate\Http\Request;
 //use Illuminate\Http\File;
@@ -24,6 +25,7 @@ trait XmlTrait
             return $this->returnError("Error asignar namespaces", $th);
         }
 
+        $datos = array();
         $comprobante = array();
         $emisor = array();
         $receptor = array();
@@ -54,13 +56,28 @@ trait XmlTrait
                 $tfd = $xmlArray["@attributes"];
             }
 
-            return [
+            $datos = [
                 "uuid" => $tfd["UUID"],
                 "tipo_comprobante" => $comprobante["TipoDeComprobante"],
                 "emisor" => $emisor["Rfc"],
                 "receptor" => $receptor["Rfc"],
-                "total" => $comprobante["Total"],
             ];
+
+            if (($comprobante["TipoDeComprobante"] == "P")) {
+                $xml->registerXPathNamespace("p", $ns["pago10"]);
+
+                foreach ($xml->xpath('//p:Pago') as $pago10Pago) {
+                    $json = json_encode($pago10Pago);
+                    $xmlArray = json_decode($json, true);
+                    $pago10Pago = $xmlArray["@attributes"];
+                    $datos['monto'] = $pago10Pago["Monto"];
+                }
+            } else {
+                $datos['total'] = $comprobante["Total"];
+            }
+
+            return $datos;
+
         } catch (\Throwable $th) {
             return $this->returnError("Error al leer el XMl", $th);
         }
@@ -128,9 +145,9 @@ trait XmlTrait
         $file = $folderPath . $fileName;
         try {
             $zip = new ZipArchive;
-            $zip->open($file);
+            if(!$zip->open($file)) throw new Exception('No se encontró el archivo.');
 
-            //Contenidod el archivo index.csv
+            //Contenido del archivo index.csv
             if($zip->getFromName('index.csv')) {
                 $lines = explode(PHP_EOL, $zip->getFromName('index.csv'));
             } else if ($zip->getFromName('index.txt')) {
@@ -169,6 +186,11 @@ trait XmlTrait
         }
 
         return null;
+    }
+
+    public function guardarRegistro( $cargaXml )
+    {
+        return XmlCarga::create($cargaXml);
     }
 
     public function getFilesInZip($zip)
