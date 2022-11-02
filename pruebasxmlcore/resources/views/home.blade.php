@@ -40,14 +40,14 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form class="was-validated" ng-submit="cargarXML( $event )" enctype="multipart/form-data">
+                    <form class="was-validated" ng-submit="cargarXML_P( $event )" enctype="multipart/form-data">
                         <div class="form-group">
                             <label for="anio_fiscal">Año Fiscal</label>
                             <input class="form-control" type="text" name="anio_fiscal" id="anio_fiscal" readonly pattern="[0-9]+" maxlength="4" required autofocus value="2022">
                         </div>
                         <div class="input-group is-invalid">
                             <div class="custom-file">
-                                <input type="file" class="custom-file-input" accept=".xml" name="xml" id="xml" value="Navegar" required autofocus>
+                                <input type="file" class="custom-file-input" accept=".xml" name="xml" id="xmlP" value="Navegar" required autofocus>
                                 <label class="custom-file-label" for="xml">Escoger Archivo Xml...</label>
                             </div>
                         </div>
@@ -90,13 +90,13 @@
 
 @section('scripts')
 <script>
-    $('#xml').on('change',function(){
+    $('#xml, #xmlP').on('change', function() {
         //get the file name
         var fileName = $(this).val().replace('C:\\fakepath\\', " ");
         //replace the "Choose a file" label
         $(this).next('.custom-file-label').html(fileName);
     })
-    $('#zip').on('change',function(){
+    $('#zip').on('change', function() {
         //get the file name
         var fileName = $(this).val().replace('C:\\fakepath\\', " ");
         //replace the "Choose a file" label
@@ -109,6 +109,13 @@
 <style>
     .custom-file-input~.custom-file-label::after {
         content: "Elegir";
+    }
+
+    .swal-text {
+        max-height: 8em;
+        /* To be adjusted as you like */
+        overflow-y: scroll;
+        width: 100%;
     }
 </style>
 @endsection

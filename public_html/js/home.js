@@ -4,6 +4,7 @@ app.controller("home", function ($scope, $http) {
   $scope.currentPage = 1;
   $scope.pageSize = 10;
   $scope.readXml = '';
+  $scope.randomDocument = Math.floor(Math.random() * 10) + 1;
 
   $scope.cargarXML = function (event) {
     event.preventDefault();
@@ -18,15 +19,46 @@ app.controller("home", function ($scope, $http) {
       fileReader.onload = function (fileLoadedEvent) {
         base64 = fileLoadedEvent.target.result;
         base64String = base64.replace('data:', '').replace(/^.+,/, '').replace('77u/', '');
-
+        
         let data = {
           "proveedor":"10802",
           "sociedad":"1011",
-          "documento":"0123456789",
+          "documento": $scope.randomDocument.toString(),
           "importe_documento": 1150.56,
           "referencia": "1234567890",
           "rfc":"YAK800303JA7",
           "tipo_xml": "I",
+          "ejercicio": 2022,
+          "xml": base64String,
+          "nombre_xml": selectedFile[0].name
+        }
+        $scope.enviarXML(data)
+      };
+      fileReader.readAsDataURL(fileToLoad);
+    }
+  }
+  $scope.cargarXML_P = function (event) {
+    event.preventDefault();
+
+    var selectedFile = document.getElementById("xmlP").files;
+    var base64String = "";
+    if (selectedFile.length > 0) {
+      var fileToLoad = selectedFile[0];
+      var fileReader = new FileReader();
+      var base64;
+
+      fileReader.onload = function (fileLoadedEvent) {
+        base64 = fileLoadedEvent.target.result;
+        base64String = base64.replace('data:', '').replace(/^.+,/, '').replace('77u/', '');
+
+        let data = {
+          "proveedor":"10802",
+          "sociedad":"1011",
+          "documento":$scope.randomDocument.toString(),
+          "importe_documento": 1150.56,
+          "referencia": "1234567890",
+          "rfc":"YAK800303JA7",
+          "tipo_xml": "P",
           "ejercicio": 2022,
           "xml": base64String,
           "nombre_xml": selectedFile[0].name
@@ -55,7 +87,7 @@ app.controller("home", function ($scope, $http) {
           response.data.message,
           response.data.status
         );
-        $('#xml').val('').next('.custom-file-label').html('Escoger Archivo...');
+        $('#xml, #xmlP').val('').next('.custom-file-label').html('Escoger Archivo...');
       },
       function errorCallback(response) {
         console.log('error: ', response);
@@ -117,6 +149,16 @@ app.controller("home", function ($scope, $http) {
       function successCallback(response) {
         console.log(response);
         $('#zip').val('').next('.custom-file-label').html('Escoger Archivo...');
+        let xmls = response.data.xml;
+        let resumen = '';
+        xmls.forEach(xml => {
+           resumen = resumen + xml.find(element => element.toLowerCase().includes('xml')) + '\t\t\t   =>   ' + xml.pop() + '\n';
+        });
+        swal(
+          'Resumen de la Carga Masiva',
+          resumen,
+          response.data.status
+        );
       },
       function errorCallback(response) {
         console.log('error zip: ', response);

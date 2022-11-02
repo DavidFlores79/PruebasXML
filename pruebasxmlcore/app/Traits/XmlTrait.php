@@ -184,7 +184,7 @@ trait XmlTrait
             } else if ($zip->getFromName('index.txt')) {
                 $lines = explode(PHP_EOL, $zip->getFromName('index.txt'));
             } else {
-                throw new Exception('Sólo se permiten archivos "csv" o "txt".');
+                throw new Exception('Sólo se permiten archivos "index.csv" o "index.txt".');
             }
             $csvContent = array();
 
@@ -232,12 +232,19 @@ trait XmlTrait
             'sociedad' => $sociedad,
             'forma_pago' => $forma_pago,
         ];
-        
-        $resultado = XmlCarga::create($cargaXml);
-        if(is_object($resultado)) {
-            $registro[] = 'Ok';
+
+        $result = XmlCarga::where('documento', $cargaXml['documento'])->first();
+
+        if(empty($result)) {
+            if(is_object(XmlCarga::create($cargaXml))) {
+                $registro[] = 'Ok';
+                return $registro;
+            }
+        } else {
+            $registro[] = 'El documento '.$cargaXml['documento'].' ya existe en BD.';
             return $registro;
         }
+        
 
         
         return XmlCarga::create($cargaXml);

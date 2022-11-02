@@ -61,7 +61,7 @@ class XmlCargaController extends Controller
 
             return [
                 "code" => 400,
-                "status" => "error",
+                "status" => "warning",
                 "message" => "El tipo de comprobante no coincide: " . $tipo_comprobante
             ];
         }
@@ -76,12 +76,20 @@ class XmlCargaController extends Controller
         ];
 
         $resultado = $this->guardarRegistro($cargaXml, $proveedor, $sociedad, $xmlData['forma_pago']);
-        $data = [
-            "code" => 200,
-            "status" => "success",
-            "message" => "Archivo cargado correctamente.",
-            "data" => $xmlData
-        ];
+
+        if(end($resultado) == 'Ok') {
+            $data = [
+                "code" => 200,
+                "status" => "success",
+                "message" => "Archivo cargado correctamente.",
+            ];
+        } else {
+            $data = [
+                "code" => 400,
+                "status" => "warning",
+                "message" => end($resultado)
+            ];
+        }
         return response()->json($data, $data["code"]);
     }
 
@@ -143,7 +151,7 @@ class XmlCargaController extends Controller
             return [
                 "code" => 200,
                 "status" => "success",
-                "array" => $xmlValidos,
+                "xml" => $xmlValidos,
             ];
         }
 
